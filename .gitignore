@@ -1,0 +1,21 @@
+# 忽略所有的 .log 文件
+*.log
+
+# 忽略所有的 .tmp 文件和 .tmp 目录
+*.tmp
+.tmp/
+
+# 忽略特定目录下的所有 .jpg 文件
+photos/*.jpg
+
+# 忽略 node_modules 目录（通常用于 Node.js 项目）
+node_modules/
+
+# 忽略编译生成的文件（例如 Java 的 .class 文件）
+*.class
+
+# 忽略系统或编辑器自动生成的文件
+.DS_Store    # macOS 系统文件
+Thumbs.db    # Windows 系统文件
+.idea/       # JetBrains IDE 自动生成的文件
+.vscode/     # Visual Studio Code 自动生成的文件

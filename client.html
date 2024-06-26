@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Chatroom</title>
+</head>
+<body>
+    <div id="chat">
+        <ul id="messages"></ul>
+        <form id="form" action="">
+            <input id="input" autocomplete="off">
+            <button>Send</button>
+        </form>
+    </div>
+
+    <script>
+    const socket = new WebSocket('ws://localhost:3000');
+
+    socket.onopen = () => {
+        console.log('Connected to WebSocket server');
+
+        // 设置消息接收处理函数
+        socket.onmessage = (event) => {
+            const message = event.data;
+            console.log('Received message: ', message); // 确保接收到消息
+
+            // 创建新的消息元素
+            const item = document.createElement('li');
+            item.textContent = message;
+
+            // 将消息元素添加到消息列表中
+            const messagesList = document.getElementById('messages');
+            messagesList.appendChild(item);
+        };
+    };
+
+    socket.onerror = (error) => {
+        console.error('WebSocket error: ', error);
+    };
+        document.getElementById('form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            const input = document.getElementById('input');
+            const message = input.value;
+            socket.send(message);
+            input.value = '';
+        });
+    </script>
+</body>
+</html>
