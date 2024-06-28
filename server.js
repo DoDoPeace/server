@@ -3,7 +3,7 @@ const http = require('http');
 const WebSocket = require('ws');
 
 // 导入模块
-const mysql = require('mysql')
+const mysql = require('mysql');
 
 // 创建HTTP服务器
 const server = http.createServer();
@@ -25,46 +25,56 @@ connection.connect(err => {
   console.log('Connected to the database');
 });
 
-
 // 创建WebSocket服务器
 const wss = new WebSocket.Server({ server });
 
-
 // 处理客户端连接事件
 wss.on('connection', (ws) => {
-   // 发送历史消息给新连接的客户端
-   connection.query('SELECT * FROM chat_messages ORDER BY timestamp ASC', (err, results) => {
-    if (err) {
-        console.error('Error retrieving messages:', err);
-        return;
-    }
-    ws.send(JSON.stringify(results));
-});
+    // 查询总记录数
+    connection.query('SELECT COUNT(*) AS total_count FROM chat_messages', (err, countResult) => {
+        if (err) {
+            console.error('Error counting messages:', err);
+            return;
+        }
 
-  ws.on('message', (message) => {
-      connection.query(
-        'INSERT INTO chat_messages (message) VALUES (?)',
-        [`${message}`],
-        (err, result) => {
+        const totalCount = countResult[0].total_count;
+        const offset = totalCount > 10 ? totalCount - 10 : 0;
+
+        // 查询最后十条记录
+        connection.query(`SELECT * FROM chat_messages ORDER BY timestamp ASC LIMIT 10 OFFSET ${offset}`, (err, results) => {
             if (err) {
-                console.error('Error saving message:', err);
+                console.error('Error retrieving messages:', err);
                 return;
             }
+            ws.send(JSON.stringify(results));
+        });
+    });
 
-            // 广播消息给所有连接的客户端
-            wss.clients.forEach((client) => {
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(JSON.stringify([{message: `${message}`}]));
+    ws.on('message', (message) => {
+        connection.query(
+            'INSERT INTO chat_messages (message) VALUES (?)',
+            [`${message}`],
+            (err, result) => {
+                if (err) {
+                    console.error('Error saving message:', err);
+                    return;
                 }
-            });
-        }
-    );
-  });
 
-  ws.on('close', () => {
-      console.log('Client disconnected');
-  });
+                // 广播消息给所有连接的客户端
+                wss.clients.forEach((client) => {
+                    if (client.readyState === WebSocket.OPEN) {
+                        client.send(JSON.stringify([{message: `${message}`}]));
+                    }
+                });
+            }
+        );
+    });
+
+    ws.on('close', () => {
+        console.log('Client disconnected');
+    });
 });
+
 // 启动服务器
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
